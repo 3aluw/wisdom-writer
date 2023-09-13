@@ -5,7 +5,7 @@
             <p>How fast is your typing today ?</p>
         </div>
         <div class="dialog-cont">
-            <v-dialog v-model="usernameDialog">
+            <v-dialog v-model="newUserDialog">
                 <template v-slot:activator="{ props }">
                     <v-btn v-bind="props" color="#3DF5E5">Get started</v-btn>
                 </template>
@@ -13,7 +13,7 @@
                 <v-card class="px-2 py-2">
                     <div class="mb-2">
                         chose a username
-                        <v-text-field label="chose a unique username" hide-details="auto"></v-text-field>
+                        <v-text-field label="chose a unique username" hide-details="auto" v-model="username"></v-text-field>
 
                     </div>
 
@@ -24,7 +24,7 @@
                             }}</v-checkbox>
                     </div>
                     <v-card-actions>
-                        <v-btn color="primary" block @click="usernameDialog = false">start the app</v-btn>
+                        <v-btn color="primary" block @click="createUser">start the app</v-btn>
                     </v-card-actions>
                 </v-card>
             </v-dialog>
@@ -39,8 +39,14 @@
 
     </div>
 </template>
-<script setup>
-const usernameDialog = ref(false)
+<script setup lang="ts" >
+const runtimeConfig = useRuntimeConfig()
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../convex/_generated/api";
+const client = new ConvexHttpClient(runtimeConfig.public.CONVEX_URL);
+const newUserDialog = ref(false)
+const username = ref('')
+
 const textCategories = [
     "Inspirational",
     "Motivational",
@@ -67,7 +73,14 @@ const textCategories = [
     "news report",
     "simple essay"
 ];
-const chosenCategories = ref([])
+const chosenCategories: Ref<string[]> = ref([])
+
+const createUser = async () => {
+    const userId = await client.mutation(api.user.createUser, { username: username.value, preferences: [...chosenCategories.value] })
+    console.log('id: ', userId);
+    console.log('link', `${username}_${userId}`);
+
+}
 </script>
 <style scoped>
 .cont {

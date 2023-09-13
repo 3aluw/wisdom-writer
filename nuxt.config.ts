@@ -8,6 +8,11 @@ export default defineNuxtConfig({
         'defineStore', // import { defineStore } from 'pinia'
         ['defineStore', 'definePiniaStore'], // import { defineStore as definePiniaStore } from 'pinia'
       ],
+    },runtimeConfig:{
+      public: {
+        CONVEX_URL : process.env.CONVEX_URL,
+        CONVEX_DEPLOYMENT : process.env.CONVEX_DEPLOYMENT
+      }
     },
       build: {
     transpile: ['vuetify'],
