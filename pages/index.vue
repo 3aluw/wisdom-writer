@@ -44,9 +44,10 @@ const runtimeConfig = useRuntimeConfig()
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../convex/_generated/api";
 const client = new ConvexHttpClient(runtimeConfig.public.CONVEX_URL);
+const router = useRouter()
+
 const newUserDialog = ref(false)
 const username = ref('')
-
 const textCategories = [
     "Inspirational",
     "Motivational",
@@ -75,11 +76,13 @@ const textCategories = [
 ];
 const chosenCategories: Ref<string[]> = ref([])
 
+
 const createUser = async () => {
     const userId = await client.mutation(api.user.createUser, { username: username.value, preferences: [...chosenCategories.value] })
-    console.log('id: ', userId);
-    console.log('link', `${username}_${userId}`);
 
+    const userLinkParam = `${username.value}_${userId}`
+
+    router.push(`/user/${userLinkParam}`)
 }
 </script>
 <style scoped>
