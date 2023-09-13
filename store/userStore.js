@@ -1,14 +1,14 @@
 import { defineStore, acceptHMRUpdate } from "pinia";
 
 
-export const useFirstStore = defineStore("FirstStore", () => {
-const count = 0;
+export const useUserStore = defineStore("userStore", () => {
+const user = ref();
 
 
 
 
   return {
-   count
+    user
   };
 },
 /* Enable this to persist this store : more info : https://prazdevs.github.io/pinia-plugin-persistedstate/frameworks/nuxt-3.html
@@ -18,5 +18,5 @@ const count = 0;
 );
 
 if (import.meta.hot) {
-  import.meta.hot.accept(acceptHMRUpdate(useFirstStore, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useUserStore, import.meta.hot));
 }
