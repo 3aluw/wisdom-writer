@@ -4,32 +4,38 @@
             <h1>👋 Hi GUEST</h1>
             <p>How fast is your typing today ?</p>
         </div>
-        <div class="dialog-cont">
-            <v-dialog v-model="newUserDialog">
-                <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" color="#3DF5E5">Get started</v-btn>
-                </template>
 
-                <v-card class="px-2 py-2">
-                    <div class="mb-2">
-                        chose a username
-                        <v-text-field label="chose a unique username" hide-details="auto" v-model="username"></v-text-field>
+        <div class="flex gap-6 flex-wrap">
+            <NuxtLink to="user/demo_1"><v-btn color="#3DF5E5" variant="outlined">Demo</v-btn> </NuxtLink>
 
-                    </div>
+            <div class="dialog-cont">
+                <v-dialog v-model="newUserDialog">
+                    <template v-slot:activator="{ props }">
+                        <v-btn v-bind="props" color="#3DF5E5">Get started</v-btn>
+                    </template>
 
-                    chose some themes:
-                    <div class="checkboxes-cont pr-12  grid grid-cols-2 md:grid-cols-3">
-                        <v-checkbox class="checkbox" v-for="category in textCategories" v-model="chosenCategories"
-                            :value="category" hide-details>{{ category
-                            }}</v-checkbox>
-                    </div>
-                    <v-card-actions>
-                        <v-btn color="primary" block @click="createUser">start the app</v-btn>
-                    </v-card-actions>
-                </v-card>
-            </v-dialog>
+                    <v-card class="px-2 py-2">
+                        <div class="mb-2">
+                            chose a username
+                            <v-text-field label="chose a unique username" hide-details="auto"
+                                v-model="username"></v-text-field>
+
+                        </div>
+
+                        chose some themes:
+                        <div class="checkboxes-cont pr-12  grid grid-cols-2 md:grid-cols-3">
+                            <v-checkbox class="checkbox" v-for="category in textCategories" v-model="chosenCategories"
+                                :value="category" hide-details>{{ category
+                                }}</v-checkbox>
+                        </div>
+                        <v-card-actions>
+                            <v-btn color="primary" block @click="createUser">start the app</v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-dialog>
+            </div>
+
         </div>
-
 
         <div class="howto-cont flex flex-col gap-4 items-center ">
             <div class="step">and remember that <strong>consistency</strong> is 🔑</div>
