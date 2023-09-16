@@ -14,6 +14,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as openai from "../openai";
 import type * as user from "../user";
 
 /**
@@ -25,6 +26,7 @@ import type * as user from "../user";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  openai: typeof openai;
   user: typeof user;
 }>;
 export declare const api: FilterApi<
