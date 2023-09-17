@@ -1,15 +1,17 @@
 <template>
-    <section class="flex items-center">
+    <section class="flex items-center justify-center">
         <v-progress-linear v-model="charsLeft" max="200"></v-progress-linear>
-        <div class="typing-cont relative w-full">
+        <div class="typing-cont relative w-full" v-if="!isTypingFinished">
             <p class=" opacity-40 text-xl px-4">{{ quote }}</p>
             <div class="example-hider"></div>
-            <textarea class="absolute w-full h-full text-xl px-4" :disabled="disableTextarea"
+            <textarea class="absolute w-full h-full text-xl px-4" :disabled="isTypingFinished"
                 @keyup.once="timeObj.setStart()" v-model="writtenQuote"></textarea>
         </div>
-
+        <UserResults v-if="isTypingFinished" :resObj="userResults" />
+        <v-btn :disabled="!isTypingFinished" icon="mdi-arrow-down" color="#47817E" variant="outlined"
+            class="!absolute bottom-2"> </v-btn>
     </section>
-    <section>
+    <section v-if="isTypingFinished">
         <div class="w-full md:w-5/12">
             <ClientOnly>
                 <apexchart width="100%" type="line" :options="ordersChartOptions" :series="orderSeries"></apexchart>
@@ -43,7 +45,7 @@ const retrieveUser = async () => {
 }
 
 //handle The text
-const disableTextarea = ref(false)
+const isTypingFinished = ref(false)
 const quote = "I'm selfish, impatient and a little insecure. I make mistakes, I am out of control and at  times hard to handle. But if you can't handle me at my worst, then you sure as hell don't deserve me at my best."
 const writtenQuote = ref('')
 
@@ -51,9 +53,12 @@ const charsLeft = computed(() => {
     const charsLeft = quote.length - writtenQuote.value.length;
     if (charsLeft <= 0) {
         timeObj.setEnd();
-        todaysResults.value.accuracy = calculateAccuracy()
-        todaysResults.value.duration = timeObj.calculateDifference()
-        todaysResults.value.WPM = calculateWPM(todaysResults.value.duration)
+        userResults.value.duration = timeObj.calculateDifference()
+        userResults.value.quoteLength = quote.length
+        userResults.value.accuracy = calculateAccuracy()
+        userResults.value.WPM = calculateWPM(userResults.value.duration);
+        //finish typing and show results component
+        isTypingFinished.value = true
     }
     return charsLeft;
 })
@@ -70,7 +75,7 @@ let timeObj = {
     },
     calculateDifference() {
 
-        return (this.end.getTime() - this.start.getTime()) / 1000
+        return Math.floor((this.end.getTime() - this.start.getTime()) / 1000)
     }
 }
 //handle accuracy 
@@ -81,14 +86,15 @@ const calculateAccuracy = () => {
             differences++;
         }
     }
-    return 100 - (differences * 100) / quote.length;
+    return Math.floor(100 - (differences * 100) / quote.length);
 }
 
 const calculateWPM = (duration: number) => {
-    return (quote.length / 5) / (duration / 60)
+    return Math.floor((quote.length / 5) / (duration / 60))
 }
-const todaysResults = ref({
+const userResults = ref({
     duration: 0,
+    quoteLength: 0,
     WPM: 0,
     accuracy: 0
 })
@@ -135,6 +141,8 @@ const orderSeries = ref([
 <style scoped>
 section {
     min-height: 100vh;
+    background-color: #1D1B1B;
+    color: white;
 }
 
 .typing-cont {
