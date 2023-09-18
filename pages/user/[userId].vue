@@ -11,11 +11,22 @@
         <v-btn :disabled="!isTypingFinished" icon="mdi-arrow-down" color="#47817E" variant="outlined"
             class="!absolute bottom-2"> </v-btn>
     </section>
-    <section v-if="isTypingFinished">
-        <div class="w-full md:w-5/12">
-            <ClientOnly>
-                <apexchart width="100%" type="line" :options="ordersChartOptions" :series="orderSeries"></apexchart>
-            </ClientOnly>
+    <section>
+        <div class="flex flex-wrap h-screen items-center justify-around">
+            <div class="w-full md:w-5/12">
+                <ClientOnly>
+                    <apexchart width="100%" type="line" :options="WPMChartOptions" :series="WPMSeries"></apexchart>
+                </ClientOnly>
+            </div>
+            <div class="w-full md:w-5/12">
+                <ClientOnly>
+                    <apexchart width="100%" type="line" :options="accuracyChartOptions" :series="accuracySeries">
+
+                    </apexchart>
+                </ClientOnly>
+            </div>
+
+
         </div>
     </section>
 </template>
@@ -30,9 +41,13 @@ const route = useRoute();
 
 //handle user
 const demoMode = ref(false)
-onMounted(() => retrieveUser())
+const userResultsHistory: Ref<{ WPM: number[], quality: number[] }> = ref({ WPM: [], quality: [] })
 const retrieveUser = async () => {
-    if (route.fullPath.match(/demo_1/)) { demoMode.value = true; return }
+    if (route.fullPath.match(/demo_1/)) {
+        demoMode.value = true;
+        userResultsHistory.value = userStore.demoResObject
+        return
+    }
 
     const idFromPath = route.fullPath.match(/[^_]+$/)
     if (Array.isArray(idFromPath)) {
@@ -43,6 +58,7 @@ const retrieveUser = async () => {
         await navigateTo("/")
     }
 }
+retrieveUser();
 
 //handle The text
 const isTypingFinished = ref(false)
@@ -51,15 +67,7 @@ const writtenQuote = ref('')
 
 const charsLeft = computed(() => {
     const charsLeft = quote.length - writtenQuote.value.length;
-    if (charsLeft <= 0) {
-        timeObj.setEnd();
-        userResults.value.duration = timeObj.calculateDifference()
-        userResults.value.quoteLength = quote.length
-        userResults.value.accuracy = calculateAccuracy()
-        userResults.value.WPM = calculateWPM(userResults.value.duration);
-        //finish typing and show results component
-        isTypingFinished.value = true
-    }
+    if (charsLeft <= 0) handleTypingFinish()
     return charsLeft;
 })
 
@@ -98,13 +106,51 @@ const userResults = ref({
     WPM: 0,
     accuracy: 0
 })
+//handle typing finish 
+const handleTypingFinish = () => {
+    //calculate results & push new results to store
+    timeObj.setEnd();
+
+    userResultsHistory.value.WPM.push(calculateWPM(userResults.value.duration))
+    userResultsHistory.value.quality.push(calculateAccuracy())
+
+    userResults.value.duration = timeObj.calculateDifference()
+    userResults.value.quoteLength = quote.length
+    userResults.value.accuracy = userResultsHistory.value.quality.at(-1)!
+    userResults.value.WPM = userResultsHistory.value.WPM.at(-1)!
+    //finish typing and show results component
+    isTypingFinished.value = true
+
+
+}
+
 
 
 //second section logic
-const ordersChartOptions = ref({
+const WPMSeriesData = ref()
+const accuracySeriesData: Ref<{ x: string, y: number }[]> = ref([])
+const generateSeriesData = () => {
+    const today = new Date();
+    const day = new Date(today);
+    if (demoMode.value) {
+        WPMSeriesData.value = userResultsHistory.value.WPM.map((WPMRes: number, index: number) => {
+            const datetime = day.setDate(today.getDate() - index);
+            const dateFormatter = new Intl.DateTimeFormat();
+            const dateString = dateFormatter.format(datetime);
+            //push to accuracySeries too
+            accuracySeriesData.value.push({ x: dateString, y: userResultsHistory.value.quality[index] })
+            return { x: dateString, y: WPMRes }
+
+        })
+    }
+}
+generateSeriesData()
+//WPM chart
+const WPMChartOptions = ref({
+    theme: { mode: 'dark', },
     colors: ['#009DFF'],
     chart: {
-        id: "orders-chart",
+        id: "WPM-chart", background: 'transparent',
         toolbar: {
             show: false,
         }
@@ -116,25 +162,50 @@ const ordersChartOptions = ref({
         curve: 'smooth',
     },
     markers: {
-        size: 5,
+        size: 2,
     },
     title: {
-        text: "Your CPM tracker",
+        text: "Your WPM tracker",
+    },
+    fill: {
+        colors: ['#1D1B1B']
+    }
+})
+const accuracyChartOptions = ref({
+    theme: { mode: 'dark', },
+    colors: ['#009DFF'],
+    chart: {
+        id: "accuracy-chart", background: 'transparent',
+        toolbar: {
+            show: false,
+        }
+    },
+    xaxis: {
+        type: "datetime"
+    },
+    stroke: {
+        curve: 'smooth',
+    },
+    markers: {
+        size: 2,
+    },
+    title: {
+        text: "The quality of your typing (%)",
     },
     fill: {
         colors: ['black', '#E91E63', '#9C27B0']
     }
 })
-
-
-const orderSeries = ref([
+const WPMSeries = ref([
     {
-        name: "orders",
-        data: [
-            { x: 10 / 12 / 2023, y: 5 },
-            { x: 11 / 12 / 2023, y: 5 },
-            { x: 12 / 12 / 2023, y: 5 },
-        ],
+        name: "WPM",
+        data: WPMSeriesData.value
+    }
+])
+const accuracySeries = ref([
+    {
+        name: "accuracy",
+        data: accuracySeriesData.value
     }
 ])
 </script>
