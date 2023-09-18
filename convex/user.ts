@@ -33,13 +33,13 @@ export const getUserHistory = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
     const currentDate = new Date(); // Get the current date and time
-  const fifthDayBackward = new Date(currentDate); // Create a new Date object as a copy of the current date
+  const thirtyDaysBackward = new Date(currentDate); // Create a new Date object as a copy of the current date
 
-  // Subtract 5 days from the copy of the current date
-  fifthDayBackward.setDate(currentDate.getDate() - 6);
- const  fifthDayBackwardTimestamp = fifthDayBackward.getTime()
+  // Subtract 30 days from the copy of the current date
+  thirtyDaysBackward.setDate(currentDate.getDate() - 30);
+ const  monthBackwardTimestamp = thirtyDaysBackward.getTime()
     const resultHistory = await ctx.db.query("results").filter((q) => q.eq(q.field("userId"), args.userId))
-    .filter((q) => q.gte(q.field("_creationTime"), fifthDayBackwardTimestamp))
+    .filter((q) => q.gte(q.field("_creationTime"), monthBackwardTimestamp))
     .order("desc").take(5)
  return resultHistory
   }})

@@ -1,5 +1,6 @@
 <template>
     <section class="flex items-center justify-center">
+        <Loader v-if="showLoader" />
         <v-progress-linear v-model="charsLeft" max="200"></v-progress-linear>
         <div class="typing-cont relative w-full" v-if="!isTypingFinished">
             <p class=" opacity-40 text-xl px-4">{{ quote }}</p>
@@ -40,13 +41,16 @@ import { api } from "@/convex/_generated/api";
 const client = new ConvexHttpClient(runtimeConfig.public.CONVEX_URL as string);
 const route = useRoute();
 const userLocalResults = useStorage('userLocalResults', { duration: 10, quoteLength: 203 })
+const showLoader = ref(true)
+
 //handle user
 const demoMode = ref(false)
 const userResultsHistory: Ref<{ WPM: number[], quality: number[] }> = ref({ WPM: [], quality: [] })
 const retrieveUser = async () => {
     if (route.fullPath.match(/demo_1/)) {
         demoMode.value = true;
-        userResultsHistory.value = userStore.demoResObject
+        showLoader.value = false
+        userResultsHistory.value = userStore.demoResObject;
         return
     }
     const idFromPath = route.fullPath.match(/[^_]+$/)
@@ -54,12 +58,12 @@ const retrieveUser = async () => {
         const userId = idFromPath[0]
         const user = await client.query(api.user.getUserById, { userId: userId })
         user ? userStore.user = user : await navigateTo("/");
-        console.log(user);
-        createUserHistory(userStore.user._id)
+        createUserHistory(userStore.user._id);
     } else {
 
         await navigateTo("/")
     }
+
 }
 retrieveUser();
 
@@ -127,15 +131,15 @@ const createUserHistory = async (userId: string) => {
 const didUserTypeToday = (timestamp: number) => {
     const today = new Date().setHours(0, 0, 0, 0);
     const lastUseDate = new Date(timestamp).setHours(0, 0, 0, 0);
-    console.log(today === lastUseDate);
     if (today === lastUseDate) {
-
+        //don't allow the user to type if he had today
         userResults.value.duration = userLocalResults.value.duration
         userResults.value.quoteLength = userLocalResults.value.quoteLength
         userResults.value.accuracy = userResultsHistory.value.quality.at(-1)!
         userResults.value.WPM = userResultsHistory.value.WPM.at(-1)!
         isTypingFinished.value = true;
     }
+    showLoader.value = false
 }
 //handle typing finish 
 const handleTypingFinish = () => {
@@ -185,7 +189,7 @@ const generateSeriesData = () => {
 //WPM chart
 const WPMChartOptions = ref({
     theme: { mode: 'dark', },
-    colors: ['#009DFF'],
+    colors: ['#348d34'],
     chart: {
         id: "WPM-chart", background: 'transparent',
         toolbar: {
@@ -203,9 +207,6 @@ const WPMChartOptions = ref({
     },
     title: {
         text: "Your WPM tracker",
-    },
-    fill: {
-        colors: ['#1D1B1B']
     }
 })
 const accuracyChartOptions = ref({
@@ -215,6 +216,7 @@ const accuracyChartOptions = ref({
         id: "accuracy-chart", background: 'transparent',
         toolbar: {
             show: false,
+
         }
     },
     xaxis: {
@@ -229,9 +231,7 @@ const accuracyChartOptions = ref({
     title: {
         text: "The quality of your typing (%)",
     },
-    fill: {
-        colors: ['black', '#E91E63', '#9C27B0']
-    }
+
 })
 const WPMSeries = ref([
     {
