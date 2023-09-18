@@ -34,11 +34,12 @@
 import { useUserStore } from "~/store/userStore"
 const userStore = useUserStore()
 const runtimeConfig = useRuntimeConfig()
+import { useStorage } from '@vueuse/core'
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 const client = new ConvexHttpClient(runtimeConfig.public.CONVEX_URL as string);
 const route = useRoute();
-
+const userLocalResults = useStorage('userLocalResults', { duration: 10, quoteLength: 203 })
 //handle user
 const demoMode = ref(false)
 const userResultsHistory: Ref<{ WPM: number[], quality: number[] }> = ref({ WPM: [], quality: [] })
@@ -129,8 +130,8 @@ const didUserTypeToday = (timestamp: number) => {
     console.log(today === lastUseDate);
     if (today === lastUseDate) {
 
-        userResults.value.duration = timeObj.calculateDifference()
-        userResults.value.quoteLength = quote.length
+        userResults.value.duration = userLocalResults.value.duration
+        userResults.value.quoteLength = userLocalResults.value.quoteLength
         userResults.value.accuracy = userResultsHistory.value.quality.at(-1)!
         userResults.value.WPM = userResultsHistory.value.WPM.at(-1)!
         isTypingFinished.value = true;
@@ -152,33 +153,32 @@ const handleTypingFinish = () => {
     isTypingFinished.value = true;
     //if it is demo : generate charts
     if (demoMode.value) generateSeriesData()
-    //if it is not demo mode push the new results to convex and locally
+    //if it is not demo mode push the new results to convex / save duration and quote length to local storage as they are not saved on convex
     if (!demoMode.value) {
         insertNewResults(userResults.value.WPM, userResults.value.accuracy);
-
+        userLocalResults.value.duration = userResults.value.duration
+        userLocalResults.value.quoteLength = userResults.value.quoteLength
     }
 }
 
 const insertNewResults = async (WPM: number, accuracy: number) => {
-    const pushedResult = await client.mutation(api.user.insertResult, { WPM, accuracy, userId: "3bv6w6xqzn2v86mcd0044j159jeyrq0" })
-    console.log('pushedResult: ', pushedResult);
+    const newResultId = await client.mutation(api.user.insertResult, { WPM, accuracy, userId: userStore.user._id })
 }
 
 //second section logic
-const WPMSeriesData = ref()
+const WPMSeriesData: Ref<{ x: string, y: number }[]> = ref([])
 const accuracySeriesData: Ref<{ x: string, y: number }[]> = ref([])
 
 const generateSeriesData = () => {
     const today = new Date();
     const day = new Date(today);
-
-    WPMSeriesData.value = userResultsHistory.value.WPM.map((WPMRes: number, index: number) => {
+    userResultsHistory.value.WPM.forEach((WPMRes: number, index: number) => {
         const datetime = day.setDate(today.getDate() - index);
         const dateFormatter = new Intl.DateTimeFormat();
         const dateString = dateFormatter.format(datetime);
+        WPMSeriesData.value.push({ x: dateString, y: WPMRes })
         //push to accuracySeries too
         accuracySeriesData.value.push({ x: dateString, y: userResultsHistory.value.quality[index] })
-        return { x: dateString, y: WPMRes }
     })
 }
 
