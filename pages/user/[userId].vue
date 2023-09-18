@@ -9,9 +9,9 @@
         </div>
         <UserResults v-if="isTypingFinished" :resObj="userResults" />
         <v-btn :disabled="!isTypingFinished" icon="mdi-arrow-down" color="#47817E" variant="outlined"
-            class="!absolute bottom-2"> </v-btn>
+            class="!absolute bottom-2" href="#charts"> </v-btn>
     </section>
-    <section>
+    <section v-if="isTypingFinished" id="charts">
         <div class="flex flex-wrap h-screen items-center justify-around">
             <div class="w-full md:w-5/12">
                 <ClientOnly>
@@ -48,17 +48,25 @@ const retrieveUser = async () => {
         userResultsHistory.value = userStore.demoResObject
         return
     }
-
     const idFromPath = route.fullPath.match(/[^_]+$/)
     if (Array.isArray(idFromPath)) {
         const userId = idFromPath[0]
         const user = await client.query(api.user.getUserById, { userId: userId })
         user ? userStore.user = user : await navigateTo("/");
+        retrieveUserHistory(userStore.user._id)
     } else {
         await navigateTo("/")
     }
 }
 retrieveUser();
+
+const retrieveUserHistory = async (userId: string) => {
+    console.log(userId);
+    const history = await client.query(api.user.getUserHistory, { userId })
+    console.log('history: ', history);
+}
+
+
 
 //handle The text
 const isTypingFinished = ref(false)
@@ -98,6 +106,7 @@ const calculateAccuracy = () => {
 }
 
 const calculateWPM = (duration: number) => {
+    console.log(quote.length, duration);
     return Math.floor((quote.length / 5) / (duration / 60))
 }
 const userResults = ref({
@@ -110,21 +119,25 @@ const userResults = ref({
 const handleTypingFinish = () => {
     //calculate results & push new results to store
     timeObj.setEnd();
+    userResults.value.duration = timeObj.calculateDifference()
+    userResults.value.quoteLength = quote.length
 
     userResultsHistory.value.WPM.push(calculateWPM(userResults.value.duration))
     userResultsHistory.value.quality.push(calculateAccuracy())
 
-    userResults.value.duration = timeObj.calculateDifference()
-    userResults.value.quoteLength = quote.length
     userResults.value.accuracy = userResultsHistory.value.quality.at(-1)!
     userResults.value.WPM = userResultsHistory.value.WPM.at(-1)!
     //finish typing and show results component
-    isTypingFinished.value = true
+    isTypingFinished.value = true;
 
-
+    //if it is not demo mode push the new results to convex
+    if (!demoMode.value) insertNewResults(userResults.value.WPM, userResults.value.accuracy)
 }
 
-
+const insertNewResults = async (WPM: number, accuracy: number) => {
+    const pushedResult = await client.mutation(api.user.insertResult, { WPM, accuracy, userId: "3bv6w6xqzn2v86mcd0044j159jeyrq0" })
+    console.log('pushedResult: ', pushedResult);
+}
 
 //second section logic
 const WPMSeriesData = ref()
