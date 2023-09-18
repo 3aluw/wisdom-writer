@@ -53,18 +53,14 @@ const retrieveUser = async () => {
         const userId = idFromPath[0]
         const user = await client.query(api.user.getUserById, { userId: userId })
         user ? userStore.user = user : await navigateTo("/");
-        retrieveUserHistory(userStore.user._id)
+        console.log(user);
+        createUserHistory(userStore.user._id)
     } else {
+
         await navigateTo("/")
     }
 }
 retrieveUser();
-
-const retrieveUserHistory = async (userId: string) => {
-    console.log(userId);
-    const history = await client.query(api.user.getUserHistory, { userId })
-    console.log('history: ', history);
-}
 
 
 
@@ -106,7 +102,6 @@ const calculateAccuracy = () => {
 }
 
 const calculateWPM = (duration: number) => {
-    console.log(quote.length, duration);
     return Math.floor((quote.length / 5) / (duration / 60))
 }
 const userResults = ref({
@@ -115,6 +110,32 @@ const userResults = ref({
     WPM: 0,
     accuracy: 0
 })
+
+const createUserHistory = async (userId: string) => {
+    const history = await client.query(api.user.getUserHistory, { userId })
+
+    userResultsHistory.value.WPM = history.map((obj) => obj.WPM)
+    userResultsHistory.value.quality = history.map((obj) => obj.accuracy)
+
+
+    // check if the user used the app today show him the todays' results
+    didUserTypeToday(history[0]._creationTime)
+    generateSeriesData()
+}
+
+const didUserTypeToday = (timestamp: number) => {
+    const today = new Date().setHours(0, 0, 0, 0);
+    const lastUseDate = new Date(timestamp).setHours(0, 0, 0, 0);
+    console.log(today === lastUseDate);
+    if (today === lastUseDate) {
+
+        userResults.value.duration = timeObj.calculateDifference()
+        userResults.value.quoteLength = quote.length
+        userResults.value.accuracy = userResultsHistory.value.quality.at(-1)!
+        userResults.value.WPM = userResultsHistory.value.WPM.at(-1)!
+        isTypingFinished.value = true;
+    }
+}
 //handle typing finish 
 const handleTypingFinish = () => {
     //calculate results & push new results to store
@@ -129,9 +150,13 @@ const handleTypingFinish = () => {
     userResults.value.WPM = userResultsHistory.value.WPM.at(-1)!
     //finish typing and show results component
     isTypingFinished.value = true;
+    //if it is demo : generate charts
+    if (demoMode.value) generateSeriesData()
+    //if it is not demo mode push the new results to convex and locally
+    if (!demoMode.value) {
+        insertNewResults(userResults.value.WPM, userResults.value.accuracy);
 
-    //if it is not demo mode push the new results to convex
-    if (!demoMode.value) insertNewResults(userResults.value.WPM, userResults.value.accuracy)
+    }
 }
 
 const insertNewResults = async (WPM: number, accuracy: number) => {
@@ -142,22 +167,21 @@ const insertNewResults = async (WPM: number, accuracy: number) => {
 //second section logic
 const WPMSeriesData = ref()
 const accuracySeriesData: Ref<{ x: string, y: number }[]> = ref([])
+
 const generateSeriesData = () => {
     const today = new Date();
     const day = new Date(today);
-    if (demoMode.value) {
-        WPMSeriesData.value = userResultsHistory.value.WPM.map((WPMRes: number, index: number) => {
-            const datetime = day.setDate(today.getDate() - index);
-            const dateFormatter = new Intl.DateTimeFormat();
-            const dateString = dateFormatter.format(datetime);
-            //push to accuracySeries too
-            accuracySeriesData.value.push({ x: dateString, y: userResultsHistory.value.quality[index] })
-            return { x: dateString, y: WPMRes }
 
-        })
-    }
+    WPMSeriesData.value = userResultsHistory.value.WPM.map((WPMRes: number, index: number) => {
+        const datetime = day.setDate(today.getDate() - index);
+        const dateFormatter = new Intl.DateTimeFormat();
+        const dateString = dateFormatter.format(datetime);
+        //push to accuracySeries too
+        accuracySeriesData.value.push({ x: dateString, y: userResultsHistory.value.quality[index] })
+        return { x: dateString, y: WPMRes }
+    })
 }
-generateSeriesData()
+
 //WPM chart
 const WPMChartOptions = ref({
     theme: { mode: 'dark', },

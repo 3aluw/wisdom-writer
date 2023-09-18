@@ -32,7 +32,15 @@ export const insertResult = mutation({
 export const getUserHistory = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
-    const resultHistory = await ctx.db.query("results").filter((q) => q.eq(q.field("userId"), args.userId)).order("desc").take(5)
+    const currentDate = new Date(); // Get the current date and time
+  const fifthDayBackward = new Date(currentDate); // Create a new Date object as a copy of the current date
+
+  // Subtract 5 days from the copy of the current date
+  fifthDayBackward.setDate(currentDate.getDate() - 6);
+ const  fifthDayBackwardTimestamp = fifthDayBackward.getTime()
+    const resultHistory = await ctx.db.query("results").filter((q) => q.eq(q.field("userId"), args.userId))
+    .filter((q) => q.gte(q.field("_creationTime"), fifthDayBackwardTimestamp))
+    .order("desc").take(5)
  return resultHistory
   }})
 
