@@ -43,13 +43,28 @@ const route = useRoute();
 const userLocalResults = useStorage('userLocalResults', { duration: 10, quoteLength: 203 })
 const showLoader = ref(true)
 
+
+
+//handle The text
+let quote = "I'm selfish, impatient and a little insecure. I make mistakes, I am out of control and at  times hard to handle. But if you can't handle me at my worst, then you sure as hell don't deserve me at my best."
+const generateQuote = async (isTest: boolean) => {
+    if (isTest) {
+        const response = await fetch('https://api.quotable.io/quotes/random?minLength=50') as any
+        let json = await response.json()
+        quote = json[0]["content"]
+        showLoader.value = false
+    }
+}
+
+
 //handle user
 const demoMode = ref(false)
+
 const userResultsHistory: Ref<{ WPM: number[], quality: number[] }> = ref({ WPM: [], quality: [] })
 const retrieveUser = async () => {
     if (route.fullPath.match(/demo_1/)) {
         demoMode.value = true;
-        showLoader.value = false
+        generateQuote(true)
         userResultsHistory.value = userStore.demoResObject;
         return
     }
@@ -69,11 +84,10 @@ retrieveUser();
 
 
 
-//handle The text
-const isTypingFinished = ref(false)
-const quote = "I'm selfish, impatient and a little insecure. I make mistakes, I am out of control and at  times hard to handle. But if you can't handle me at my worst, then you sure as hell don't deserve me at my best."
-const writtenQuote = ref('')
 
+//handle user interactivity
+const writtenQuote = ref('')
+const isTypingFinished = ref(false)
 const charsLeft = computed(() => {
     const charsLeft = quote.length - writtenQuote.value.length;
     if (charsLeft <= 0) handleTypingFinish()
@@ -121,11 +135,11 @@ const createUserHistory = async (userId: string) => {
 
     userResultsHistory.value.WPM = history.map((obj) => obj.WPM)
     userResultsHistory.value.quality = history.map((obj) => obj.accuracy)
-
+    const datesObj = history.map((obj) => obj._creationTime) as number[]
 
     // check if the user used the app today show him the todays' results
     didUserTypeToday(history[0]._creationTime)
-    generateSeriesData()
+    generateSeriesData(datesObj)
 }
 
 const didUserTypeToday = (timestamp: number) => {
@@ -149,6 +163,7 @@ const handleTypingFinish = () => {
     userResults.value.quoteLength = quote.length
 
     userResultsHistory.value.WPM.push(calculateWPM(userResults.value.duration))
+    console.log('userResultsHistory: ', userResultsHistory);
     userResultsHistory.value.quality.push(calculateAccuracy())
 
     userResults.value.accuracy = userResultsHistory.value.quality.at(-1)!
@@ -175,17 +190,33 @@ const insertNewResults = async (WPM: number, accuracy: number) => {
 const WPMSeriesData: Ref<{ x: string, y: number }[]> = ref([])
 const accuracySeriesData: Ref<{ x: string, y: number }[]> = ref([])
 
-const generateSeriesData = () => {
-    const today = new Date();
-    const day = new Date(today);
-    userResultsHistory.value.WPM.forEach((WPMRes: number, index: number) => {
-        const datetime = day.setDate(today.getDate() - index);
-        const dateFormatter = new Intl.DateTimeFormat();
-        const dateString = dateFormatter.format(datetime);
-        WPMSeriesData.value.push({ x: dateString, y: WPMRes })
-        //push to accuracySeries too
-        accuracySeriesData.value.push({ x: dateString, y: userResultsHistory.value.quality[index] })
-    })
+const generateSeriesData = (datesObj?: number[]) => {
+    if (demoMode.value) {
+        const today = new Date();
+        const day = new Date(today);
+        userResultsHistory.value.WPM.forEach((WPMRes: number, index: number) => {
+            const datetime = day.setDate(today.getDate() - (5 - index));
+            const dateFormatter = new Intl.DateTimeFormat();
+            const dateString = dateFormatter.format(datetime);
+            WPMSeriesData.value.push({ x: dateString, y: WPMRes })
+            //push to accuracySeries too
+            accuracySeriesData.value.push({ x: dateString, y: userResultsHistory.value.quality[index] })
+        })
+    }
+    else {
+        userResultsHistory.value.WPM.forEach((WPMRes: number, index: number) => {
+            const date = formatDate(datesObj![index])
+            WPMSeriesData.value.push({ x: date, y: WPMRes })
+            accuracySeriesData.value.push({ x: date, y: userResultsHistory.value.quality[index] })
+        }
+        )
+        console.log('accuracySeriesData.value: ', accuracySeriesData.value);
+    }
+}
+const formatDate = (date: number) => {
+    const dateFormatter = new Intl.DateTimeFormat();
+    const dateString = dateFormatter.format(date)
+    return dateString
 }
 
 //WPM chart

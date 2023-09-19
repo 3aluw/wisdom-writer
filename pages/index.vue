@@ -9,9 +9,9 @@
             <NuxtLink to="user/demo_1"><v-btn color="#3DF5E5" variant="outlined">Demo</v-btn> </NuxtLink>
 
             <div class="dialog-cont">
-                <v-dialog v-model="newUserDialog">
+                <v-dialog v-model="newUserDialog" theme="dark">
                     <template v-slot:activator="{ props }">
-                        <v-btn v-bind="props" color="#3DF5E5">Get started</v-btn>
+                        <v-btn v-bind="props" color="#3DF5E5" class="text-black">Get started</v-btn>
                     </template>
 
                     <v-card class="px-2 py-2">
@@ -22,7 +22,7 @@
 
                         </div>
 
-                        chose some themes:
+                        chose some themes (5 at least):
                         <div class="checkboxes-cont pr-12  grid grid-cols-2 md:grid-cols-3">
                             <v-checkbox class="checkbox" v-for="category in textCategories" v-model="chosenCategories"
                                 :value="category" hide-details>{{ category
@@ -84,6 +84,7 @@ const chosenCategories: Ref<string[]> = ref([])
 
 
 const createUser = async () => {
+    if (!username.value.length || chosenCategories.value.length < 5) return
     const userId = await client.mutation(api.user.createUser, { username: username.value, preferences: [...chosenCategories.value] })
 
     const userLinkParam = `${username.value}_${userId}`
