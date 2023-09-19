@@ -4,7 +4,7 @@
         <p class="text-center mb-8 title"> Your today's results</p>
         <div class="stats flex justify-between gap-4 flex-wrap ">
             <p>accuracy : <span :class="accuracyClass">{{ props.resObj.accuracy }}%</span> </p>
-            <p>WPM: <span :class="WPMClass">{{ props.resObj.WPM }}</span></p>
+            <p><span :class="WPMClass">{{ props.resObj.WPM }}</span> WPM </p>
         </div>
         <p class="mt-4"> You had typed {{ props.resObj.quoteLength }} characters in {{ props.resObj.duration }} s</p>
         <p class="motivation-phrase">well done, see you tomorrow 😊</p>

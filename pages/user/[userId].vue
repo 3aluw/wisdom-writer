@@ -6,7 +6,7 @@
             <p class=" opacity-40 text-xl px-4">{{ quote }}</p>
             <div class="example-hider"></div>
             <textarea class="absolute w-full h-full text-xl px-4" :disabled="isTypingFinished"
-                @keyup.once="timeObj.setStart()" v-model="writtenQuote"></textarea>
+                @keyup.once="timeObj.setStart()" @keydown.enter.prevent v-model="writtenQuote"></textarea>
         </div>
         <UserResults v-if="isTypingFinished" :resObj="userResults" />
         <v-btn :disabled="!isTypingFinished" icon="mdi-arrow-down" color="#47817E" variant="outlined"
@@ -155,14 +155,16 @@ const handleTypingFinish = () => {
     userResults.value.WPM = userResultsHistory.value.WPM.at(-1)!
     //finish typing and show results component
     isTypingFinished.value = true;
-    //if it is demo : generate charts
-    if (demoMode.value) generateSeriesData()
+
+
     //if it is not demo mode push the new results to convex / save duration and quote length to local storage as they are not saved on convex
     if (!demoMode.value) {
         insertNewResults(userResults.value.WPM, userResults.value.accuracy);
         userLocalResults.value.duration = userResults.value.duration
         userLocalResults.value.quoteLength = userResults.value.quoteLength
     }
+    // generate charts
+    generateSeriesData()
 }
 
 const insertNewResults = async (WPM: number, accuracy: number) => {
@@ -189,7 +191,7 @@ const generateSeriesData = () => {
 //WPM chart
 const WPMChartOptions = ref({
     theme: { mode: 'dark', },
-    colors: ['#348d34'],
+    colors: ['#1b9419'],
     chart: {
         id: "WPM-chart", background: 'transparent',
         toolbar: {
@@ -211,7 +213,7 @@ const WPMChartOptions = ref({
 })
 const accuracyChartOptions = ref({
     theme: { mode: 'dark', },
-    colors: ['#009DFF'],
+    colors: ['#f3f350'],
     chart: {
         id: "accuracy-chart", background: 'transparent',
         toolbar: {
