@@ -10,9 +10,9 @@ export const generateText = action({
     }, 
     handler : async(ctx, args)=>{
         const completion = await openai.chat.completions.create({
-            messages: [{ role: 'user', content: `generate a random short text (50<words>100) about ${args.theme}. feel free to add any quotes and talk in any related subject` }],
+            messages: [{ role: 'user', content: `generate a random text (50<words>100) about ${args.theme}. feel free to add quotes. talk in a related subject` }],
             model: 'gpt-3.5-turbo',
           })
-          return completion
+          return completion 
     }
 })

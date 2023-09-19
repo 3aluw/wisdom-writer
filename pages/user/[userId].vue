@@ -49,11 +49,21 @@ const showLoader = ref(true)
 let quote = "I'm selfish, impatient and a little insecure. I make mistakes, I am out of control and at  times hard to handle. But if you can't handle me at my worst, then you sure as hell don't deserve me at my best."
 const generateQuote = async (isTest: boolean) => {
     if (isTest) {
-        const response = await fetch('https://api.quotable.io/quotes/random?minLength=50') as any
+        const response = await fetch('https://api.quotable.io/quotes/random?minLength=250') as any
         let json = await response.json()
         quote = json[0]["content"]
-        showLoader.value = false
     }
+    else {
+
+        const themes = userStore.user.preferences as string[]
+        const theme = themes[Math.floor((Math.random() * themes.length))]
+
+        const response = await client.action(api.openai.generateText, { theme })
+        if (response.choices[0].message.content) { quote = response.choices[0].message.content; }
+        else (generateQuote(true))
+        return
+    }
+    showLoader.value = false
 }
 
 
@@ -73,6 +83,7 @@ const retrieveUser = async () => {
         const userId = idFromPath[0]
         const user = await client.query(api.user.getUserById, { userId: userId })
         user ? userStore.user = user : await navigateTo("/");
+        generateQuote(false)
         createUserHistory(userStore.user._id);
     } else {
 
@@ -196,21 +207,21 @@ const generateSeriesData = (datesObj?: number[]) => {
         const day = new Date(today);
         userResultsHistory.value.WPM.forEach((WPMRes: number, index: number) => {
             const datetime = day.setDate(today.getDate() - (5 - index));
-            const dateFormatter = new Intl.DateTimeFormat();
-            const dateString = dateFormatter.format(datetime);
+
+            const dateString = formatDate(datetime)
             WPMSeriesData.value.push({ x: dateString, y: WPMRes })
             //push to accuracySeries too
             accuracySeriesData.value.push({ x: dateString, y: userResultsHistory.value.quality[index] })
         })
     }
     else {
+        //if the user is real use real dates
         userResultsHistory.value.WPM.forEach((WPMRes: number, index: number) => {
             const date = formatDate(datesObj![index])
             WPMSeriesData.value.push({ x: date, y: WPMRes })
             accuracySeriesData.value.push({ x: date, y: userResultsHistory.value.quality[index] })
         }
         )
-        console.log('accuracySeriesData.value: ', accuracySeriesData.value);
     }
 }
 const formatDate = (date: number) => {

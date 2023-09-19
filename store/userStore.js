@@ -2,6 +2,12 @@ import { defineStore, acceptHMRUpdate } from "pinia";
 
 
 export const useUserStore = defineStore("userStore", () => {
+/*  type user ={
+    username : string,
+    _id : string,
+    _creationTime : number,
+    preferences : string[]
+  }*/
 const user = ref();
 
 const demoResObject = {

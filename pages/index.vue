@@ -38,9 +38,9 @@
         </div>
 
         <div class="howto-cont flex flex-col gap-4 items-center ">
-            <div class="step">and remember that <strong>consistency</strong> is 🔑</div>
-            <div class="step">write something and get feedback</div>
-            <div class="step">chose a username</div>
+            <div class="step">Ai will give you a text to type</div>
+            <div class="step">type it and track your development </div>
+            <div class="step">remember that <strong>consistency</strong> is the 🔑</div>
         </div>
 
     </div>
@@ -102,7 +102,7 @@ const createUser = async () => {
 }
 
 h1 {
-    color: #00C9C7;
+    color: #00cbc9;
     font-family: "Lucida Sans", "inter", Arial, Helvetica, sans-serif;
     font-size: 3rem;
 }
@@ -115,7 +115,7 @@ h1 {
     color: black;
 }
 
-.step:nth-child(1) {
+.step:nth-child(3) {
     font-size: 1.2rem;
 }
 
@@ -123,7 +123,7 @@ h1 {
     font-size: 1.1rem;
 }
 
-.step:nth-child(3) {
+.step:nth-child(1) {
     font-size: 1rem;
 }
 
