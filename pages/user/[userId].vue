@@ -1,13 +1,16 @@
 <template>
     <section class="flex items-center justify-center">
+
+        {{ charsLeft }} {{ isTypingFinished }}
         <Loader v-if="showLoader" />
-        <v-progress-linear v-model="charsLeft" max="200"></v-progress-linear>
+        <v-progress-linear v-model="charsLeft" :max="quote.length"></v-progress-linear>
         <div class="typing-cont relative w-full" v-if="!isTypingFinished">
             <p class=" opacity-40 text-xl px-4">{{ quote }}</p>
             <div class="example-hider"></div>
             <textarea class="absolute w-full h-full text-xl px-4" :disabled="isTypingFinished"
                 @keyup.once="timeObj.setStart()" @keydown.enter.prevent v-model="writtenQuote"></textarea>
         </div>
+
         <UserResults v-if="isTypingFinished" :resObj="userResults" />
         <v-btn :disabled="!isTypingFinished" icon="mdi-arrow-down" color="#47817E" variant="outlined"
             class="!absolute bottom-2" href="#charts"> </v-btn>
@@ -25,6 +28,7 @@
 
                     </apexchart>
                 </ClientOnly>
+
             </div>
 
 
@@ -41,29 +45,29 @@ import { api } from "@/convex/_generated/api";
 const client = new ConvexHttpClient(runtimeConfig.public.CONVEX_URL as string);
 const route = useRoute();
 const userLocalResults = useStorage('userLocalResults', { duration: 10, quoteLength: 203 })
+
 const showLoader = ref(true)
 
 
 
 //handle The text
-let quote = "I'm selfish, impatient and a little insecure. I make mistakes, I am out of control and at  times hard to handle. But if you can't handle me at my worst, then you sure as hell don't deserve me at my best."
+let quote = ref("I'm selfish, impatient and a little insecure. I make mistakes, I am out of control and at  times hard to handle. But if you can't handle me at my worst, then you sure as hell don't deserve me at my best.")
 const generateQuote = async (isTest: boolean) => {
     if (isTest) {
         const response = await fetch('https://api.quotable.io/quotes/random?minLength=250') as any
         let json = await response.json()
-        quote = json[0]["content"]
+        quote.value = json[0]["content"]
+        showLoader.value = false
     }
     else {
-
         const themes = userStore.user.preferences as string[]
         const theme = themes[Math.floor((Math.random() * themes.length))]
-
         const response = await client.action(api.openai.generateText, { theme })
-        if (response.choices[0].message.content) { quote = response.choices[0].message.content; }
+        if (response.choices[0].message.content) { quote.value = response.choices[0].message.content; showLoader.value = false }
         else (generateQuote(true))
         return
     }
-    showLoader.value = false
+
 }
 
 
@@ -85,6 +89,7 @@ const retrieveUser = async () => {
         user ? userStore.user = user : await navigateTo("/");
         generateQuote(false)
         createUserHistory(userStore.user._id);
+
     } else {
 
         await navigateTo("/")
@@ -100,7 +105,7 @@ retrieveUser();
 const writtenQuote = ref('')
 const isTypingFinished = ref(false)
 const charsLeft = computed(() => {
-    const charsLeft = quote.length - writtenQuote.value.length;
+    const charsLeft = quote.value.length - writtenQuote.value.length;
     if (charsLeft <= 0) handleTypingFinish()
     return charsLeft;
 })
@@ -123,16 +128,16 @@ let timeObj = {
 //handle accuracy 
 const calculateAccuracy = () => {
     let differences = 0;
-    for (let i = 0; i < quote.length; i++) {
-        if (quote[i] !== writtenQuote.value[i]) {
+    for (let i = 0; i < quote.value.length; i++) {
+        if (quote.value[i] !== writtenQuote.value[i]) {
             differences++;
         }
     }
-    return Math.floor(100 - (differences * 100) / quote.length);
+    return Math.floor(100 - (differences * 100) / quote.value.length);
 }
 
 const calculateWPM = (duration: number) => {
-    return Math.floor((quote.length / 5) / (duration / 60))
+    return Math.floor((quote.value.length / 5) / (duration / 60))
 }
 const userResults = ref({
     duration: 0,
@@ -143,14 +148,16 @@ const userResults = ref({
 
 const createUserHistory = async (userId: string) => {
     const history = await client.query(api.user.getUserHistory, { userId })
+    if (history.length > 1) {
+        userResultsHistory.value.WPM = history.map((obj) => obj.WPM)
+        userResultsHistory.value.quality = history.map((obj) => obj.accuracy)
+        const datesObj = history.map((obj) => obj._creationTime) as number[]
 
-    userResultsHistory.value.WPM = history.map((obj) => obj.WPM)
-    userResultsHistory.value.quality = history.map((obj) => obj.accuracy)
-    const datesObj = history.map((obj) => obj._creationTime) as number[]
+        // check if the user used the app today show him the todays' results
+        didUserTypeToday(history[0]._creationTime)
+        generateSeriesData(datesObj)
+    }
 
-    // check if the user used the app today show him the todays' results
-    didUserTypeToday(history[0]._creationTime)
-    generateSeriesData(datesObj)
 }
 
 const didUserTypeToday = (timestamp: number) => {
@@ -171,10 +178,10 @@ const handleTypingFinish = () => {
     //calculate results & push new results to store
     timeObj.setEnd();
     userResults.value.duration = timeObj.calculateDifference()
-    userResults.value.quoteLength = quote.length
+    userResults.value.quoteLength = quote.value.length
 
     userResultsHistory.value.WPM.push(calculateWPM(userResults.value.duration))
-    console.log('userResultsHistory: ', userResultsHistory);
+
     userResultsHistory.value.quality.push(calculateAccuracy())
 
     userResults.value.accuracy = userResultsHistory.value.quality.at(-1)!
@@ -216,8 +223,10 @@ const generateSeriesData = (datesObj?: number[]) => {
     }
     else {
         //if the user is real use real dates
+        console.log('userResultsHistory: ', userResultsHistory);
         userResultsHistory.value.WPM.forEach((WPMRes: number, index: number) => {
-            const date = formatDate(datesObj![index])
+
+            const date = datesObj && datesObj[index] ? formatDate(datesObj[index]) : formatDate(new Date().valueOf())
             WPMSeriesData.value.push({ x: date, y: WPMRes })
             accuracySeriesData.value.push({ x: date, y: userResultsHistory.value.quality[index] })
         }
