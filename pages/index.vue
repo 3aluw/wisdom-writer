@@ -11,7 +11,8 @@
             <div class="dialog-cont">
                 <v-dialog v-model="newUserDialog" theme="dark">
                     <template v-slot:activator="{ props }">
-                        <v-btn v-bind="props" color="#3DF5E5" class="text-black">Get started</v-btn>
+                        <v-btn v-bind="props" color="#3DF5E5" class="text-black" v-if="!userLinkLocalStorage.length">Get
+                            started</v-btn>
                     </template>
 
                     <v-card class="px-2 py-2">
@@ -33,6 +34,8 @@
                         </v-card-actions>
                     </v-card>
                 </v-dialog>
+                <v-btn color="#3DF5E5" class="text-black" v-if="userLinkLocalStorage.length"
+                    @click="router.push(userLinkLocalStorage)">Continue </v-btn>
             </div>
 
         </div>
@@ -51,6 +54,10 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "../convex/_generated/api";
 const client = new ConvexHttpClient(runtimeConfig.public.CONVEX_URL);
 const router = useRouter()
+import { useStorage } from '@vueuse/core';
+
+let userLinkLocalStorage: Ref<string> = useStorage('userLinkLocalStorage', '')
+
 
 const newUserDialog = ref(false)
 const username = ref('')
@@ -75,7 +82,7 @@ const textCategories = [
     "Knowledge",
     "Time",
     "Gratitude",
-    "short story",
+    "discipline",
     "diligence",
     "news report",
     "simple essay"
@@ -84,11 +91,11 @@ const chosenCategories: Ref<string[]> = ref([])
 
 
 const createUser = async () => {
-    if (!username.value.length || chosenCategories.value.length < 5) return
+    if (!username.value.length || chosenCategories.value.length < 3) return
     const userId = await client.mutation(api.user.createUser, { username: username.value, preferences: [...chosenCategories.value] })
 
     const userLinkParam = `${username.value}_${userId}`
-
+    userLinkLocalStorage.value = `/user/${userLinkParam}`
     router.push(`/user/${userLinkParam}`)
 }
 </script>
