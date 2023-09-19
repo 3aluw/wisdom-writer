@@ -10,7 +10,7 @@ export const generateText = action({
     }, 
     handler : async(ctx, args)=>{
         const completion = await openai.chat.completions.create({
-            messages: [{ role: 'user', content: `generate a random text (50<words>100) about ${args.theme}. feel free to add quotes. talk in a related subject` }],
+            messages: [{ role: 'user', content: `generate a short text about ${args.theme}. feel free to add quotes, talk in a related subject, but the text has to be in less than 80 words` }],
             model: 'gpt-3.5-turbo',
           })
           return completion 
