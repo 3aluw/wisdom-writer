@@ -1,7 +1,7 @@
 <template>
     <section class="flex items-center justify-center">
 
-        {{ charsLeft }} {{ isTypingFinished }}
+
         <Loader v-if="showLoader" />
         <v-progress-linear v-model="charsLeft" :max="quote.length"></v-progress-linear>
         <div class="typing-cont relative w-full" v-if="!isTypingFinished">
@@ -133,6 +133,7 @@ const calculateAccuracy = () => {
             differences++;
         }
     }
+    console.log(differences, quote.value.length);
     return Math.floor(100 - (differences * 100) / quote.value.length);
 }
 

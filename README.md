@@ -1,7 +1,8 @@
 
-# Nuxt 3 boilerplate
+# What is this ?
+This is a simple project I used to participate on the (Web Dev Cody X Convex) [hackathon](https://vuetifyjs.com/) 
 
-This is a boilerplate for Nuxt 3, designed to help you quickly jump-start your project as it has some essential modules.
+
 
 
 ## modules

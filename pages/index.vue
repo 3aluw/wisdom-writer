@@ -1,7 +1,8 @@
 <template>
     <div class="cont flex flex-col items-center justify-evenly py-8">
         <div class="text-center">
-            <h1>👋 Hi GUEST</h1>
+            <h1>👋 Hi there
+            </h1>
             <p>How fast is your typing today ?</p>
         </div>
 
@@ -46,6 +47,7 @@
             <div class="step">remember that <strong>consistency</strong> is the 🔑</div>
         </div>
 
+
     </div>
 </template>
 <script setup lang="ts" >
@@ -57,7 +59,6 @@ const router = useRouter()
 import { useStorage } from '@vueuse/core';
 
 let userLinkLocalStorage: Ref<string> = useStorage('userLinkLocalStorage', '')
-
 
 const newUserDialog = ref(false)
 const username = ref('')
@@ -101,11 +102,14 @@ const createUser = async () => {
 </script>
 <style scoped>
 .cont {
-    background-color: #423C3C;
+    background-color: #3c433d;
     min-height: 100vh;
     font-family: "inter", Arial, Helvetica, sans-serif;
     color: white;
     justify-content: space-between;
+    background-color: #232323;
+    opacity: 1;
+    background: repeating-linear-gradient(-45deg, #244554, #244554 17.5px, #232323 17.5px, #232323 87.5px);
 }
 
 h1 {
